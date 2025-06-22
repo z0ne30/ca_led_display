@@ -2,6 +2,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_Protomatter.h>
 #include "PanelConfig.h"
+#include "CellularAutomata.h"
 
 // RGB Matrix pinout for Raspberry Pi Pico
 #define R1_PIN 2
@@ -25,6 +26,12 @@
 #define PANEL_WIDTH 64
 #define PANEL_HEIGHT 64
 #define PANEL_COUNT 4
+#define TOTAL_WIDTH (PANEL_WIDTH * 2)
+#define TOTAL_HEIGHT (PANEL_HEIGHT * 2)
+
+// Animation speed settings
+#define FRAME_DELAY 50      // Milliseconds between frames
+#define AUTOMATON_DURATION 60000  // Run each automaton for 60 seconds before switching
 
 // Global variables
 uint8_t rgbPins[] = {R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN};
@@ -40,6 +47,10 @@ Adafruit_Protomatter matrix(
   true,             // Double-buffering
   2                 // 2 vertical tiles (2x2 grid)
 );
+
+// Global pointer to the current cellular automaton
+CellularAutomaton* currentAutomaton = nullptr;
+unsigned long lastAutomatonChange = 0;
 
 // Hardware initialization for matrix panels
 void Reginit() {
@@ -119,12 +130,64 @@ void Reginit() {
   digitalWrite(CLK_PIN, LOW);
 }
 
+// Function to display the automaton name
+void displayAutomatonName(const char* name) {
+  // Clear just the top portion of the screen
+  matrix.fillRect(0, 0, TOTAL_WIDTH, 10, 0);
+  
+  // Set text properties
+  matrix.setTextSize(1);
+  matrix.setTextColor(matrix.color565(200, 200, 200));
+  matrix.setRotation(0);  // Normal rotation for text
+  
+  // Calculate center position
+  int16_t x1, y1;
+  uint16_t w, h;
+  matrix.getTextBounds(name, 0, 0, &x1, &y1, &w, &h);
+  int16_t centerX = (TOTAL_WIDTH - w) / 2;
+  
+  // Draw the text
+  matrix.setCursor(centerX, 2);
+  matrix.print(name);
+  matrix.show();
+}
+
+// Function to select a random automaton
+void selectRandomAutomaton() {
+  // Delete any existing automaton
+  if (currentAutomaton != nullptr) {
+    delete currentAutomaton;
+    currentAutomaton = nullptr;
+  }
+  
+  // Seed the random number generator with a combination of time and analog noise
+  randomSeed(millis() ^ analogRead(A0));
+  
+  // Create a new random automaton
+  currentAutomaton = createRandomAutomaton(&matrix, TOTAL_WIDTH, TOTAL_HEIGHT);
+  
+  // Initialize the automaton
+  currentAutomaton->init();
+  
+  // Display the name of the automaton
+  displayAutomatonName(currentAutomaton->getName());
+  
+  // Reset the timer
+  lastAutomatonChange = millis();
+  
+  Serial1.print("Selected automaton: ");
+  Serial1.println(currentAutomaton->getName());
+}
+
 void setup() {
   Serial1.begin(115200);
-  Serial1.println("Panel Color Test");
+  Serial1.println("Cellular Automata Demo");
   
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH); // LED on during setup
+  
+  // Initialize random seed from an unconnected analog pin
+  randomSeed(analogRead(A0));
   
   // Initialize the panels
   Reginit();
@@ -142,74 +205,21 @@ void setup() {
   Serial1.println("Matrix initialized successfully");
   digitalWrite(LED_BUILTIN, LOW); // LED off when ready
   
-  // Display different colors on each panel
-  Serial1.println("Panel identification test");
-  
-  // Clear display
-  matrix.fillScreen(0);
-  
-  // Since we now see:
-  // - Top-left: P0
-  // - Top-right: P1
-  // - Bottom-left: P2
-  // - Bottom-right: P3
-  //
-  // Let's use this as our base mapping and just make the colors match the panels
-  
-  // Top-left: Should be P1 (GREEN) but showing P0, so put P1 in P0's position
-  matrix.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT, matrix.color565(0, 255, 0));
-  
-  // Top-right: Should be P3 (YELLOW) but showing P1, so put P3 in P1's position
-  matrix.fillRect(PANEL_WIDTH, 0, PANEL_WIDTH, PANEL_HEIGHT, matrix.color565(255, 255, 0));
-  
-  // Bottom-left: Should be P2 (BLUE) and showing P2, so this one is correct
-  matrix.fillRect(0, PANEL_HEIGHT, PANEL_WIDTH, PANEL_HEIGHT, matrix.color565(0, 0, 255));
-  
-  // Bottom-right: Should be P0 (RED) but showing P3, so put P0 in P3's position
-  matrix.fillRect(PANEL_WIDTH, PANEL_HEIGHT, PANEL_WIDTH, PANEL_HEIGHT, matrix.color565(255, 0, 0));
-  
-  // Add labels for each panel
-  matrix.setTextSize(3);  // Larger text
-  matrix.setTextColor(matrix.color565(255, 255, 255));
-  
-  // Set rotation to 180 degrees for all text
-  matrix.setRotation(2);
-  
-  // Calculate center positions for each panel
-  int charWidth = 18;
-  int charHeight = 24;
-  
-  // Top-left: Should display P1 text
-  int centerX = PANEL_WIDTH/2 - charWidth;
-  int centerY = PANEL_HEIGHT/2 - charHeight/2;
-  matrix.setCursor(centerX, centerY);
-  matrix.print("P1");
-  
-  // Top-right: Should display P3 text
-  centerX = PANEL_WIDTH + PANEL_WIDTH/2 - charWidth;
-  centerY = PANEL_HEIGHT/2 - charHeight/2;
-  matrix.setCursor(centerX, centerY);
-  matrix.print("P3");
-  
-  // Bottom-left: Should display P2 text
-  centerX = PANEL_WIDTH/2 - charWidth;
-  centerY = PANEL_HEIGHT + PANEL_HEIGHT/2 - charHeight/2;
-  matrix.setCursor(centerX, centerY);
-  matrix.print("P2");
-  
-  // Bottom-right: Should display P0 text
-  centerX = PANEL_WIDTH + PANEL_WIDTH/2 - charWidth;
-  centerY = PANEL_HEIGHT + PANEL_HEIGHT/2 - charHeight/2;
-  matrix.setCursor(centerX, centerY);
-  matrix.print("P0");
-  
-  // Show the display
-  matrix.show();
-  
-  Serial1.println("Panel identification complete");
+  // Select a random automaton to start
+  selectRandomAutomaton();
 }
 
 void loop() {
-  // Nothing to do in the loop
-  delay(1000);
+  // Check if it's time to switch to a new automaton
+  if (millis() - lastAutomatonChange > AUTOMATON_DURATION) {
+    selectRandomAutomaton();
+  }
+  
+  // Update and render the current automaton
+  if (currentAutomaton != nullptr) {
+    currentAutomaton->step();
+  }
+  
+  // Small delay to control frame rate
+  delay(FRAME_DELAY);
 }
