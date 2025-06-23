@@ -1,0 +1,30 @@
+]0;🐍Done | 9.2.8\[2K[0GAuto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+
+Press any key to enter the REPL. Use CTRL-D to reload.
+]0;🐍REPL | 9.2.8\
+Adafruit CircuitPython 9.2.8 on 2025-05-28; Raspberry Pi Pico with rp2040
+>>> 
+>>> 
+>>> cp /Users/enyurao/Desktop/Github/led_display/python_cellular_automata/display.py /Volumes/CIRCUITPY/
+Traceback (most recent call last):
+  File "<stdin>", line 1
+SyntaxError: invalid syntax
+>>> 
+>>> 
+>>> cp /Users/enyurao/Desktop/Github/led_display/python_cellular_automata/display.py /Volumes/CIRCUITPY/
+Traceback (most recent call last):
+  File "<stdin>", line 1
+SyntaxError: invalid syntax
+>>> 
+>>> 
+>>> cp /Users/enyurao/Desktop/Github/led_display/python_cellular_automata/debug.py /Volumes/CIRCUITPY/
+Traceback (most recent call last):
+  File "<stdin>", line 1
+SyntaxError: invalid syntax
+>>> 
+>>> 
+>>> cd /
+Traceback (most recent call last):
+  File "<stdin>", line 1
+SyntaxError: invalid syntax
+>>> 

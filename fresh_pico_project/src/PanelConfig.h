@@ -28,42 +28,37 @@ typedef struct {
     uint8_t rotation;         // 0=normal, 1=90° CW, 2=180°, 3=270° CW
 } PanelConfig;
 
-// CONFIRMED configuration based on final testing
-// The physical panel layout and actual positions observed:
+// CORRECTED configuration based on observed panel layout in image
+// The logical panel layout (how we want to address them in code):
 //  ┌─────┬─────┐
 //  │     │     │
-//  │  P0 │  P1 │
+//  │  P0 │  P1 │ (TL)  (TR)
 //  │     │     │
 //  ├─────┼─────┤
 //  │     │     │
-//  │  P2 │  P3 │
+//  │  P2 │  P3 │ (BL)  (BR)
 //  │     │     │
 //  └─────┴─────┘
 //
-// The physical/electrical chain ordering is:
+// The actual physical arrangement observed in the image:
 //  ┌─────┬─────┐
 //  │     │     │
-//  │  1  │  2  │
+//  │  BR │  TR │ (P3)  (P1)
 //  │     │     │
 //  ├─────┼─────┤
 //  │     │     │
-//  │  0  │  3  │
+//  │  TL │  BL │ (P0)  (P2)
 //  │     │     │
 //  └─────┴─────┘
 //
-// All panels need 180° rotation to fix upside-down text
-//
-// We need to place our desired content in the observed positions:
-// - For P0 (RED) content: Place in bottom-right quadrant
-// - For P1 (GREEN) content: Place in top-left quadrant
-// - For P2 (BLUE) content: Place in bottom-left quadrant
-// - For P3 (YELLOW) content: Place in top-right quadrant
+// Signal flow: Pico sends signal to TR panel first (Physical position 1),
+// then the chain continues through the other panels.
 //
 const PanelConfig PANEL_CONFIGS[PANEL_COUNT] = {
-    {0, 1, 2},  // Logical position 0 (top-left) -> Physical position 1 (second in chain), 180° rotation
-    {1, 2, 2},  // Logical position 1 (top-right) -> Physical position 2 (third in chain), 180° rotation
-    {2, 0, 2},  // Logical position 2 (bottom-left) -> Physical position 0 (first in chain), 180° rotation
-    {3, 3, 2}   // Logical position 3 (bottom-right) -> Physical position 3 (fourth in chain), 180° rotation
+    {0, 3, 0},  // Logical position 0 (TL) -> Physical position 3 (bottom-left)
+    {1, 1, 0},  // Logical position 1 (TR) -> Physical position 1 (top-right)
+    {2, 2, 0},  // Logical position 2 (BL) -> Physical position 2 (bottom-right)
+    {3, 0, 0}   // Logical position 3 (BR) -> Physical position 0 (top-left)
 };
 
 // Function to map a logical panel number to a physical panel configuration
@@ -83,7 +78,7 @@ inline void mapCoordinates(int16_t x, int16_t y, int16_t* mapped_x, int16_t* map
     const int16_t PANEL_H = PANEL_HEIGHT;
     
     // Determine which logical panel the coordinates are in
-    // This assumes a 2x2 arrangement - modify for your specific arrangement
+    // This assumes a 2x2 arrangement
     int panel_x = x / PANEL_W;
     int panel_y = y / PANEL_H;
     
@@ -121,8 +116,28 @@ inline void mapCoordinates(int16_t x, int16_t y, int16_t* mapped_x, int16_t* map
     }
     
     // Calculate physical panel position based on its position in the chain
-    int physical_x = (config->physicalPosition % 2) * PANEL_W;
-    int physical_y = (config->physicalPosition / 2) * PANEL_H;
+    // Physical positions according to the actual hardware arrangement:
+    // Physical positions: 0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left
+    int physical_x, physical_y;
+    
+    switch (config->physicalPosition) {
+        case 0:  // Top-left
+            physical_x = 0;
+            physical_y = 0;
+            break;
+        case 1:  // Top-right
+            physical_x = PANEL_W;
+            physical_y = 0;
+            break;
+        case 2:  // Bottom-right
+            physical_x = PANEL_W;
+            physical_y = PANEL_H;
+            break;
+        case 3:  // Bottom-left
+            physical_x = 0;
+            physical_y = PANEL_H;
+            break;
+    }
     
     // Final coordinates
     *mapped_x = physical_x + rotated_x;
