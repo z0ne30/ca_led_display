@@ -1,0 +1,30 @@
+# PlatformIO build files
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Visual Studio Code files
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Compiled files
+*.o
+*.a
+*.elf
+*.hex
+*.bin
+*.lss
+*.sym
+*.map
+
+# Debug files
+debug/
+debug_log/
+
+# Backup files
+*.bak
+*~
+*.swp

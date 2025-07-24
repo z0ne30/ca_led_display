@@ -1,10 +1,20 @@
-# 4-Panel RGB LED Matrix Test Project
+# 4-Panel RGB LED Matrix Cellular Automata Display
 
-This project provides a comprehensive test suite for a 4-panel RGB LED matrix (64x64 per panel) setup using the Raspberry Pi Pico and Adafruit Protomatter library.
+This project implements various cellular automata algorithms on a 4-panel RGB LED matrix (64x64 per panel) setup using the Raspberry Pi Pico and Adafruit Protomatter library.
 
 ## Overview
 
-The code is designed to test various aspects of a multi-panel RGB LED matrix setup, with a focus on correctly mapping coordinates when panels are arranged in a custom configuration. This is particularly useful when panels are connected in a chain but physically arranged in a different pattern or orientation.
+This project showcases various cellular automata algorithms visualized on a multi-panel RGB LED matrix display. Cellular automata are mathematical models that simulate how cells evolve over time based on simple rules and neighboring cell states. The project includes implementations of:
+
+1. Elementary Cellular Automata (Rule 30, 90, 110, etc.)
+2. Conway's Game of Life
+3. Brian's Brain
+4. Langton's Ant
+5. Cyclic Cellular Automaton
+6. Bubbling Lava
+7. Order and Chaos
+
+The display framework handles coordinate mapping for multi-panel setups, allowing for custom panel arrangements while maintaining proper visual continuity across panels.
 
 ## Hardware Requirements
 
@@ -99,17 +109,19 @@ const PanelConfig PANEL_CONFIGS[PANEL_COUNT] = {
 };
 ```
 
-## Test Patterns
+## Cellular Automata Implementations
 
-The code includes several test patterns to verify your panel configuration:
+The project includes several cellular automata implementations:
 
-1. **Panel Identification**: Colors each panel differently (Red, Green, Blue, Yellow)
-2. **Panel Numbers**: Displays the panel number (1-4) on each panel
-3. **Grid Test**: Draws a grid pattern to verify coordinate mapping
-4. **Cross-Panel Lines**: Draws lines that cross panel boundaries
-5. **Text Test**: Displays text spanning across panels
-6. **Color Cycle**: Cycles through primary and secondary colors
-7. **Animated Pattern**: Shows an animated circular pattern
+1. **Elementary Cellular Automaton**: 1D automaton with rules like Rule 30 (chaos), Rule 90 (Sierpinski triangle), and Rule 110 (Turing complete)
+2. **Conway's Game of Life**: Classic 2D cellular automaton with rules for birth, survival, and death
+3. **Brian's Brain**: Three-state cellular automaton with "ready", "firing", and "refractory" states
+4. **Langton's Ant**: Cellular automaton where an "ant" moves based on cell colors, creating emergent patterns
+5. **Cyclic Cellular Automaton**: Cells cycle through colors based on their neighbors
+6. **Bubbling Lava**: A custom automaton simulating bubbling lava-like effects
+7. **Order and Chaos**: A custom automaton showcasing the transition between ordered and chaotic states
+
+The display automatically rotates between these different automata at regular intervals.
 
 ## Building and Uploading
 
@@ -138,6 +150,13 @@ If the display doesn't work correctly:
 - Use the built-in LED to monitor the Pico's status (on during setup, off when running)
 - The serial output (115200 baud) provides debugging information and FPS measurements
 
-## Next Steps
+## Customizing and Extending
 
-Once you have verified that your panel configuration works correctly, you can modify the code to implement your specific application by adding your own display routines to the loop function.
+You can customize this project in several ways:
+
+1. **Modify Automata Parameters**: Adjust parameters in `CellularAutomata.h` to create different visual effects
+2. **Add New Automata**: Create your own cellular automata by inheriting from the `CellularAutomaton` base class
+3. **Change Timing**: Modify the transition time between automata in `main.cpp` (AUTOMATON_DURATION)
+4. **Adjust Animation Speed**: Change the FRAME_DELAY constant in `main.cpp` to speed up or slow down animations
+
+The modular design makes it easy to experiment with different cellular automata rules and visualization techniques.
